@@ -1,0 +1,29 @@
+#!/bin/sh
+if [ $(id -u) != 0 ]; then
+	exec sudo $0 "$@"
+	exit 1
+fi
+
+cd /media/space/openmandriva/abf-downloads
+if [ "$1" != "-c" -a "$1" != "--continue" ]; then
+	rm -rf rolling_backup
+	cd rolling
+	ls repository/*/*/*/{{lsb,distro}-release,om-midna-sddm}* |while read f; do
+		mkdir -p ../rolling_backup/$(dirname $f)
+		cp $f ../rolling_backup/$f
+	done
+	cd ..
+fi
+rsync -azv --progress --partial --delete --delete-excluded --exclude armv7hnl/ --exclude i686/ --exclude riscv64/ --exclude testing/ --exclude container/ cooker/* rolling/
+rm -f rolling/repository/*/*/*/{{lsb,distro}-release,om-midna-sddm}*
+cp -a rolling_backup/* rolling
+
+for ARCH in SRPMS aarch64 x86_64 znver1; do
+	for REPO in main unsupported restricted non-free debug_main debug_unsupported debug_restricted debug_non-free; do
+		echo "Rebuilding metadata for $ARCH $REPO"
+		docker run --rm -v /media/space/openmandriva/abf-downloads:/share/platforms openmandriva/createrepo:aarch64 /share/platforms/rolling/repository/$ARCH/$REPO/release/ &
+		createrepo_c /media/space/openmandriva/abf-downloads/rolling/repository/$ARCH/$REPO/testing/ %
+		createrepo_c /media/space/openmandriva/abf-downloads/rolling/repository/$ARCH/$REPO/updates/ %
+	done
+done
+wait

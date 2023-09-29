@@ -1,0 +1,59 @@
+#!/bin/sh
+json() {
+	python -c "
+import json,sys
+try:
+	print(json.load(sys.stdin)$@)
+except IndexError:
+	pass
+"
+}
+
+MYDIR="$(realpath $(dirname $0))"
+TEMP="`mktemp -d /tmp/ghc2rXXXXXX`"
+cd $TEMP
+
+if [ -z "$OAUTH_TOKEN" ]; then
+	echo "Before running this script, set OAUTH_TOKEN to a token"
+	echo "generated using https://github.com/settings/token"
+	exit 1
+fi
+
+START=""
+PERPAGE=100
+COUNT=0
+for org in OpenMandrivaAssociation; do
+	while true; do
+		QUERY="{\"query\": \"query {organization(login:\\\"$org\\\") { id name repositories(first:$PERPAGE $START) { edges { node { id name } cursor } pageInfo { endCursor hasNextPage } } } }\""
+		REPOS="$(curl -H "Authorization: token $OAUTH_TOKEN" -X POST -d "$QUERY" https://api.github.com/graphql 2>/dev/null)"
+		if [ -z "$REPOS" ]; then
+			echo "$QUERY failed" >&2
+			break
+		fi
+		for i in $(seq 0 $((PERPAGE-1))); do
+			R="$(echo $REPOS |json "['data']['organization']['repositories']['edges'][$i]['node']['name']")"
+			[ "$R" = "distro-release" -o "$R" = "openmandriva-repos" -o "$R" = "lsb-release" -o "$R" = "om-midna-sddm" ] && continue
+			if [ -z "$R" ]; then
+				echo "No more repositories at $QUERY $i" >&2
+				break
+			fi
+			COUNT=$((COUNT+1))
+			echo "Retagging $org/$R"
+			cd "$TEMP"
+			git clone "git@github.com:$org/$R"
+			if [ -d "$R" ]; then
+				cd "$R"
+				git checkout -b rolling origin/master
+				git push --force origin rolling
+				cd ..
+				rm -rf "$R"
+			fi
+		done
+		[ "$(echo $REPOS |json "['data']['organization']['repositories']['pageInfo']['hasNextPage']")" != "True" ] && break
+		START="after:\\\"$(echo $REPOS |json "['data']['organization']['repositories']['pageInfo']['endCursor']")\\\""
+	done
+done
+echo "$COUNT repositories retagged."
+
+cd "$MYDIR"
+rm -rf "$TEMP"

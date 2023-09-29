@@ -1,0 +1,35 @@
+#!/bin/sh
+HERE="$(pwd)"
+rm -f "$HERE"/*.dupes
+cat >"$HERE"/killdupes.sh <<EOF
+#!/bin/sh
+EOF
+
+TREE=cooker
+
+for arch in x86_64 znver1 aarch64; do
+	for repo in main unsupported restricted non-free; do
+		cd /media/space/openmandriva/abf-downloads/$TREE/repository/$arch/$repo/release
+		echo "# $arch $repo" >>"$HERE"/killdupes.sh
+		ls -1 |while read r; do
+			# We might still get here on a dupe that has already been removed
+			[ -e $r ] || continue
+			N="$(rpm -q --qf '%{NAME}' $r)"
+			V="$(rpm -q --qf '%{VERSION}-%{RELEASE}' $r)"
+			for i in $N-*.rpm; do
+				[ "$i" = "$r" ] && continue
+				NN="$(rpm -q --qf '%{NAME}' $i)"
+				[ "$N" != "$NN" ] && continue
+				VV="$(rpm -q --qf '%{VERSION}-%{RELEASE}' $i)"
+				if [ $(echo -e "$V\n$VV" |sort -V |head -n1) = "$V" ]; then
+					echo $r >>"$HERE"/$TREE-$arch-$repo.dupes
+					echo "rm -f /media/space/openmandriva/abf-downloads/$TREE/repository/$arch/$repo/release/$r" >>"$HERE"/killdupes.sh
+				else
+					echo $i >>"$HERE"/$TREE-$arch-$repo.dupes
+					echo "rm -f /media/space/openmandriva/abf-downloads/$TREE/repository/$arch/$repo/release/$i" >>"$HERE"/killdupes.sh
+				fi
+			done
+		done
+	done
+done
+chmod +x "$HERE"/killdupes.sh

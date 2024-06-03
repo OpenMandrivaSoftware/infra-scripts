@@ -1,0 +1,15 @@
+# This service unit is for generating a package list
+# to be used by distrowatch
+# By OpenMandriva Team (started by bero)
+#
+
+[Unit]
+Description=Create package list for Distrowatch
+Wants=packagelist.timer
+
+[Service]
+Type=oneshot
+ExecStart=/media/space/openmandriva/mirrors/packagelist
+
+[Install]
+WantedBy=multi-user.target

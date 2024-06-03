@@ -1,0 +1,7 @@
+#!/bin/sh
+# The list generated here is used by distrowatch. Don't delete it
+# just because it doesn't seem to serve any purpose for ourselves!
+for i in cooker rolling; do
+	rpm -q --qf '%{name};%{version};%{release}\n' /media/space/openmandriva/abf-downloads/$i/repository/SRPMS/*/release/*.rpm |sort >/media/space/openmandriva/abf-downloads/$i/packagelist.csv.new
+	mv -f /media/space/openmandriva/abf-downloads/$i/packagelist.csv.new /media/space/openmandriva/abf-downloads/$i/packagelist.csv
+done

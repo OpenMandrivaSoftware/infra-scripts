@@ -32,7 +32,7 @@ for org in OpenMandrivaAssociation; do
 		fi
 		for i in $(seq 0 $((PERPAGE-1))); do
 			R="$(echo $REPOS |json "['data']['organization']['repositories']['edges'][$i]['node']['name']")"
-			[ "$R" = "distro-release" -o "$R" = "openmandriva-repos" -o "$R" = "lsb-release" -o "$R" = "om-midna-sddm" ] && continue
+			[ "$R" = "distro-release" -o "$R" = "distro-release-desktop-Plasma6" -o "$R" = "distro-release-desktop-Plasma-Mobile" -o "$R" = "openmandriva-repos" -o "$R" = "lsb-release" -o "$R" = "om-midna-sddm" ] && continue
 			if [ -z "$R" ]; then
 				echo "No more repositories at $QUERY $i" >&2
 				break

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Find all packages containing a file/files in a subdirectory
+# e.g. use "packages-containing /usr/lib64/qt6/plugins" to find
+# all packages that include a Qt plugin (and therefore need to
+# be rebuilt after a Qt update)
+for repo in main extra restricted non-free; do
+	cd /media/space/openmandriva/abf-downloads/cooker/repository/x86_64/$repo/release/repodata/perfile
+	for i in *.filelists.xml; do
+		if grep -q "$1" $i; then
+			grep sourcerpm ${i/filelists/primary} |sed -e 's,.*<rpm:sourcerpm>,,;s,<.*,,'
+		fi
+	done
+done |sort |uniq

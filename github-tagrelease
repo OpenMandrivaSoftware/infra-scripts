@@ -43,7 +43,7 @@ for org in OpenMandrivaAssociation; do
 			git clone "git@github.com:$org/$R"
 			if [ -d "$R" ]; then
 				cd "$R"
-				git checkout -b 6.0 origin/master
+				git checkout -b 6.0 origin/rolling
 				git push --force origin 6.0
 				cd ..
 				rm -rf "$R"

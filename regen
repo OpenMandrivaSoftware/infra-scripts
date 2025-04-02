@@ -1,0 +1,37 @@
+#!/bin/sh
+if [ $(id -u) != 0 ]; then
+	exec sudo $0 "$@"
+	exit 1
+fi
+
+if [ "$1" = "-a" ]; then
+	shift
+	ARCHES="$1"
+	shift
+else
+	ARCHES="SRPMS aarch64 x86_64 znver1"
+fi
+
+if [ "$1" = "-r" ]; then
+	shift
+	REPOS="$1"
+	shift
+else
+	REPOS="main extra restricted non-free"
+fi
+
+if [ -n "$1" ]; then
+	TREE="$1"
+else
+	TREE="cooker"
+fi
+
+for ARCH in $ARCHES; do
+	for REPO in $REPOS; do
+		for TYPE in release testing updates; do
+			echo "Rebuilding metadata for $ARCH $REPO $TYPE"
+			docker run --rm -v /media/space/openmandriva/abf-downloads:/share/platforms openmandriva/createrepo:aarch64 /share/platforms/$TREE/repository/$ARCH/$REPO/$TYPE/ regenerate &
+		done
+	done
+done
+wait

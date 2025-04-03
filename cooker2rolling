@@ -19,7 +19,7 @@ rm -f rolling/repository/*/*/*/{{lsb,distro}-release,om-midna-sddm}*
 cp -a rolling_backup/* rolling
 
 for ARCH in SRPMS aarch64 x86_64 znver1; do
-	for REPO in main unsupported restricted non-free debug_main debug_unsupported debug_restricted debug_non-free; do
+	for REPO in main extra restricted non-free debug_main debug_extra debug_restricted debug_non-free; do
 		echo "Rebuilding metadata for $ARCH $REPO"
 		docker run --rm -v /media/space/openmandriva/abf-downloads:/share/platforms openmandriva/createrepo:aarch64 /share/platforms/rolling/repository/$ARCH/$REPO/release/ regenerate &
 		createrepo_c /media/space/openmandriva/abf-downloads/rolling/repository/$ARCH/$REPO/testing/ &
